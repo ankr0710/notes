@@ -1,0 +1,122 @@
+body{
+    background: white;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0;
+}
+.wrapper{
+    background-color: rgb(229, 231, 231);
+    width: 1000px;
+    height: 90%;
+    border: 2px solid rgb(104, 98, 98);
+    border-radius: 10px;
+    display: grid;
+    grid-template-columns: 370px 1fr;
+    overflow: hidden;
+}
+.menu{
+    background-color: rgb(234, 235, 236);
+    border-right: 1px solid rgb(167, 166, 166);
+}
+.menu__title{
+    margin: 20px;
+    font-size: 30px;
+    text-align: center;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+}
+.menu__btn{
+    background: rgb(202, 204, 204);
+    border-radius: 10px;
+    color: black;
+    cursor: pointer;
+    width: 80%;
+    display: block;
+    font-size: 20px;
+    margin: 0 auto;
+    height: 35px;
+    border: 1px solid black;
+}
+.menu__list-tags{
+    list-style: none;
+    margin-top: 0px;
+}
+.list__tags{
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    cursor: pointer;
+    padding-bottom: 10px;
+    font-size: 17px;
+}
+.h2{
+    padding-bottom: 0px;
+    padding-left: 30px;
+    color: black;
+    padding-top: 20px;
+    margin-bottom: 10px;
+}
+.content{
+    padding: 20px;
+}
+.search{
+    display: flex;
+    gap: 10px;
+    border-radius: 10px;
+}
+.search-input{
+    border: 1px solid black;
+    padding: 5px 5px;
+    flex-grow: 1;
+    border-radius: 10px;
+    justify-content: flex-end;
+    height: 25px;
+    background: whitesmoke;
+    font-size: medium;
+}
+.search__btn{
+    border-radius: 10px;
+    cursor: pointer;
+    width: 37px;
+    height: 37px;
+    margin: 0;
+    border: 1px solid black;
+}
+.list{
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    overflow-y: auto;
+    height: calc(90%-115px);
+}
+.list__report{
+    border: 1px solid black;
+    background: white;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    font-size: 20px;
+    padding: 20px;
+    position: relative;
+}
+.list__report-title{
+    margin-bottom: 10px;
+    font-size: 20px;
+}
+.list__report-date{
+    margin-top: 10px;
+    font-size: 15px;
+}
+.list__report-tag{
+    width: fit-content;
+    padding: 5px 13px;
+    border-radius: 10px;
+    position: absolute;
+    right: 13px;
+    top: 13px;
+    font-size: 15px;
+    background: rgb(234, 235, 236);
+}
