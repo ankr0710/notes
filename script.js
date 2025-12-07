@@ -1,272 +1,184 @@
+document.addEventListener('DOMContentLoaded', function() {
+    const menuButton = document.getElementById('menu_button');
+    const overlay = document.getElementById('overlay');
+    const modalClose = document.getElementById('modal_close');
+    const modalForm = document.getElementById('modal-form');
+    const modalInput = document.getElementById('modal__input');
+    const modalSelect = document.getElementById('modal__select');
+    const modalSave = document.getElementById('modal-save');
+    const modalDelete = document.getElementById('modal-delete');
+    const list = document.getElementById('list');
+    const searchInput = document.getElementById('search');
+    const searchBtn = document.getElementById('search-btn');
+    const menu = document.getElementById('menu');
 
-const list = document.getElementById('list') // Контейнер для списка заметок
-const search = document.getElementById('search') // Поле поиска
-const btnSearch = document.getElementById('search-btn') // Кнопка поиска
-const btnNote = document.getElementById('btn-note') // Кнопка создания новой заметки
-const btnModalClose = document.getElementById('modal_close') // Кнопка закрытия модального окна
-const menu = document.getElementById('menu') // Меню с тегами/категориями
-const overlay = document.getElementById("overlay") // Затемняющий фон модального окна
-const modalTitle = document.getElementById("modal__input") // Поле ввода заголовка в модальном окне
-const modalSelect = document.getElementById("modal__select") // Выпадающий список тегов в модальном окне
-const modalSaveBtn = document.getElementById("modal-save") // Кнопка сохранения в модальном окне
-const modalForm = document.getElementById('modal-form') // Форма модального окна
+    // Массив заметок
+    let notes = [];
 
-// Переменные состояния приложения
-let btnDel = null
-let activeTag = 1 // ID активного тега (по умолчанию "Все")
-let editingItem = null // Редактируемая заметка (null если создается новая)
-let maxId = null // Максимальный ID заметки для генерации новых ID
+    // Текущая редактируемая заметка
+    let currentNoteId = null;
 
-const notes = initDate()
-// Массив доступных тегов/категорий
-const tags = [
-    {
-        id: 1,
-        title: 'Все'   
-    },
-    {
-        id: 2,
-        title: 'Идея'    
-    },
-    {
-        id: 3,
-        title: 'Личное'    
-    },
-    {
-        id: 4,
-        title: 'Работа'    
-    }]
+    // Базовые теги (всегда отображаются, даже если заметок нет)
+    const BASE_TAGS = ['Идеи', 'Личное', 'Работа', 'Список покупок'];
 
-// Инициализация заметок из localStorage
-
-// Обработчик нажатия Enter в поле поиска
-search.addEventListener('keydown', function(event) {
-    if (event.key === 'Enter' || event.keyCode === 13) {
-        event.preventDefault(); // Предотвращаем стандартное действие (отправку формы)
-        btnSearch.click(); // Имитируем клик по кнопке поиска
+    // Показать модальное окно
+    function showModal(note = null) {
+        overlay.style.display = 'flex';
+        if (note) {
+            modalInput.value = note.title;
+            modalSelect.value = note.tag;
+            currentNoteId = note.id;
+            modalDelete.style.display = 'block';
+        } else {
+            modalForm.reset();
+            currentNoteId = null;
+            modalDelete.style.display = 'none';
+        }
+        modalInput.focus();
     }
+
+    // Закрыть модальное окно
+    function hideModal() {
+        overlay.style.display = 'none';
+        modalForm.reset();
+        currentNoteId = null;
+        modalDelete.style.display = 'none';
+    }
+
+    // Создать заметку
+    function createNote(title, tag) {
+        const note = {
+            id: Date.now() + Math.random().toString(36).substr(2, 9),
+            title: title,
+            tag: tag,
+            date: new Date().toLocaleDateString('ru-RU')
+        };
+        notes.push(note);
+        renderNotes();
+        renderTags();
+    }
+
+    // Обновить заметку
+    function updateNote(id, title, tag) {
+        const note = notes.find(n => n.id === id);
+        if (note) {
+            note.title = title;
+            note.tag = tag;
+            renderNotes();
+            renderTags();
+        }
+    }
+
+    // Удалить заметку
+    function deleteNote(id) {
+        notes = notes.filter(n => n.id !== id);
+        renderNotes();
+        renderTags();
+        hideModal();
+    }
+
+    // Рендеринг заметок
+    function renderNotes(filter = '') {
+        list.innerHTML = '';
+        const filteredNotes = notes.filter(note => {
+            const searchText = filter.toLowerCase();
+            return note.title.toLowerCase().includes(searchText) ||
+                   note.tag.toLowerCase().includes(searchText);
+        });
+
+        filteredNotes.forEach(note => {
+            const noteElement = document.createElement('div');
+            noteElement.className = 'list__report';
+            noteElement.dataset.id = note.id;
+
+            noteElement.innerHTML = `
+                <div class="list__report-title"><b>${note.title}</b></div>
+                <div class="list__report-date">${note.date}</div>
+                <div class="list__report-tag">${note.tag}</div>
+                <button class="list__report-edit" data-id="${note.id}">Редактировать</button>
+            `;
+
+            list.appendChild(noteElement);
+        });
+
+        // Обработчики редактирования
+        document.querySelectorAll('.list__report-edit').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.dataset.id;
+                const note = notes.find(n => n.id === id);
+                showModal(note);
+            });
+        });
+    }
+
+    // Рендеринг тегов (всегда: «Все» + базовые теги + уникальные из заметок)
+    function renderTags() {
+        // Очищаем контейнер
+        menu.innerHTML = '';
+
+        // Добавляем тег «Все» (всегда первый)
+        const allTag = document.createElement('li');
+        allTag.className = 'list__tags';
+        allTag.textContent = 'Все';
+        allTag.dataset.filter = 'all';
+        menu.appendChild(allTag);
+
+        // Собираем все теги: базовые + из заметок
+        const tagsFromNotes = [...new Set(notes.map(n => n.tag))];
+        const allTags = [...new Set([...BASE_TAGS, ...tagsFromNotes])];
+
+        // Добавляем остальные теги
+        allTags.forEach(tag => {
+            const li = document.createElement('li');
+            li.className = 'list__tags';
+            li.textContent = tag;
+            li.dataset.filter = tag;
+            menu.appendChild(li);
+        });
+
+        // Обработчики кликов по тегам
+        document.querySelectorAll('.list__tags').forEach(tagEl => {
+            tagEl.addEventListener('click', function() {
+                const filter = this.dataset.filter;
+                if (filter === 'all') {
+                    renderNotes(searchInput.value);
+                } else {
+                    renderNotes(filter);
+                }
+            });
+        });
+    }
+
+    // Обработчики событий
+    menuButton.addEventListener('click', () => showModal());
+    modalClose.addEventListener('click', hideModal);
+
+    modalForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const title = modalInput.value.trim();
+        const tag = modalSelect.value;
+
+        if (!title) return;
+
+        if (currentNoteId) {
+            updateNote(currentNoteId, title, tag);
+        } else {
+            createNote(title, tag);
+        }
+        hideModal();
+    });
+
+    modalDelete.addEventListener('click', () => deleteNote(currentNoteId));
+
+    // Поиск только по кнопке «Найти»
+    searchBtn.addEventListener('click', () => {
+        renderNotes(searchInput.value); // Запускаем рендеринг с фильтром из поля поиска
+    });
+
+    // УДАЛЕНО: поиск при вводе текста
+    // searchInput.addEventListener('input', () => renderNotes(searchInput.value));
+
+    // Инициализация
+    renderNotes();
+    renderTags();
 });
-
-// Функция поиска максимального ID среди заметок 
-function getMaxId(){
-    let max = 0
-    for (let i of notes){ // Перебираем все заметки
-        if (i.id > max){
-            max = i.id // Обновляем максимальное значение
-        }
-    }
-    return max // Возвращаем максимальный ID
-}
-
-// Функция инициализации данных из localStorage
-function initDate(){
-    const rawData = localStorage.getItem('data') // Получаем данные из localStorage
-    if (rawData === null){ // Если данных нет
-        return [] // Возвращаем пустой массив
-    }
-    return JSON.parse(rawData) // Парсим JSON и возвращаем массив заметок
-}
-
-// Функция сохранения заметок в localStorage
-function saveToLocal(){
-    localStorage.setItem('data', JSON.stringify(notes)) // Сохраняем массив как JSON строку 
-}
-
-// Функция создания элемента тега для меню
-function createTag(tag){
-    const element = document.createElement('li') // Создаем элемент списка
-    element.classList.add('list-item') // Добавляем CSS класс
-    element.innerText = tag.title // Устанавливаем текст из названия тега
-    return element // Возвращаем созданный элемент
-}
-
-// Функция создания элемента заметки для списка
-function createNote(note){
-    const element = document.createElement('div') // Создаем контейнер для заметки
-    element.classList.add("list_otch") // Добавляем CSS класс
-
-    // Создаем элемент для заголовка заметки
-    const title = document.createElement('span')
-    title.innerText = note.title
-    title.classList.add("list_otch-title")
-
-    // Создаем элемент для даты
-    const date = document.createElement('span')
-    date.classList.add("list_otch-date")
-    date.innerText = new Date().toDateString() // Текущая дата в строковом формате
-
-    // Создаем элемент для тега
-    const tag = document.createElement('span')
-    tag.classList.add("list_otch-tag")
-    // Находим название тега по ID и устанавливаем его
-    tag.innerText = tags.find((i) => i.id === note.tag).title
-    
-    // Добавляем все элементы в контейнер заметки
-    element.appendChild(title)
-    element.appendChild(date)
-    element.appendChild(tag)
-    
-    // Добавляем обработчик клика для редактирования заметки
-    element.addEventListener('click',()=>{
-        editingItem = note // Устанавливаем редактируемую заметку
-        openModal() // Открываем модальное окно
-    })
-    return element // Возвращаем созданный элемент
-}
-
-// Функция фильтрации заметок по поисковому запросу
-function getNotes(searchValue){
-    const filteredNotes = notes.filter((i) => {
-        return i.title.startsWith(searchValue) // Фильтруем заметки, которые начинаются с searchValue
-    })
-    return filteredNotes // Возвращаем отфильтрованный массив
-}
-
-// Функция рендеринга меню тегов
-function renderMenu(){
-    for(let tag of tags){ // Перебираем все теги
-        const element = createTag(tag) // Создаем элемент тега
-        element.addEventListener("click",() =>{ // Добавляем обработчик клика
-            activeTag = tag.id // Устанавливаем активный тег
-            render() // Перерисовываем список заметок
-        })
-        menu.appendChild(element) // Добавляем элемент в меню
-    }
-}
-
-// Основная функция рендеринга списка заметок
-function render(){
-    list.innerHTML = '' // Очищаем контейнер списка
-    
-    let filtered = getNotes(search.value) // Получаем отфильтрованные по поиску заметки
-
-    // Дополнительная фильтрация по активному тегу
-    if (activeTag !== 1){ // Если выбран не тег "Все"
-        filtered = filtered.filter(i => i.tag === activeTag) // Фильтруем по тегу
-    }
-
-    // Проверка на пустой результат
-    if(filtered.length === 0){
-        list.innerText = 'По вашему запросу ничего не найдено' // Сообщение об отсутствии результатов
-        return // Прерываем выполнение функции
-    }
-
-    // Рендеринг найденных заметок
-    for (let i of filtered){
-        const element = createNote(i) // Создаем элемент заметки
-        list.appendChild(element) // Добавляем в список
-    }
-}
-
-// Функция удаления заметки
-function onDelete(id){
-    const idx = notes.findIndex(i => i.id === id) // Находим индекс заметки
-    notes.splice(idx, 1) // Удаляем заметку из массива
-    saveToLocal()
-    closeModal() // Закрываем модальное окно
-    render() // Перерисовываем список
-}
-
-// Функция открытия модального окна
-function openModal(){
-    overlay.classList.add("overlay_open") // Показываем затемняющий фон
-    modalTitle.value = editingItem.title // Заполняем поле заголовка
-    
-    // Заполняем выпадающий список тегами
-    for (let tag of tags){
-        const option = document.createElement('option') // Создаем option
-        option.value = tag.id // Устанавливаем значение
-        option.innerText = tag.title // Устанавливаем текст
-        modalSelect.appendChild(option) // Добавляем в select
-    }
-    
-    // Если редактируем существующую заметку - добавляем кнопку удаления
-    if (editingItem.id){
-        btnDel = document.createElement('button') // Создаем кнопку
-        btnDel.classList.add('modal__btn-save') // Добавляем CSS класс
-        btnDel.style.background = 'red' // Устанавливаем красный фон
-        btnDel.innerText = 'Удалить' // Текст кнопки
-        btnDel.addEventListener('click',(e) => { // Обработчик клика
-            e.preventDefault() // Предотвращаем отправку формы
-            onDelete(editingItem.id) // Вызываем функцию удаления
-        })
-        modalForm.appendChild(btnDel) // Добавляем кнопку в форму
-        
-    }
-}
-
-// Функция закрытия модального окна
-function closeModal(){
-    overlay.classList.toggle("overlay_open") // Скрываем затемняющий фон
-    modalSelect.innerHTML = "" // Очищаем выпадающий список
-    editingItem = null // Сбрасываем редактируемую заметку
-    if(btnDel !== null) {
-
-        btnDel.remove() // Удаляем заметку
-    }
-}
-
-// Функция сохранения заметки (создание или обновление)
-function onSave(){
-    if(!editingItem){ // Если нет редактируемой заметки
-        closeModal() // Закрываем модальное окно
-        return // Прерываем выполнение
-    }
-    
-    // Создание новой заметки
-    if(!editingItem.id){
-        notes.unshift({ // Добавляем новую заметку в начало массива
-            id: ++maxId, // Генерируем новый ID
-            title: modalTitle.value, // Берем заголовок из поля ввода
-            tag: +modalSelect.value, // Берем тег из выпадающего списка
-            updateAt: editingItem.updateAt // Используем существующую дату
-        })
-    }
-    
-    // Обновление существующей заметки
-    if (editingItem.id){
-        const item = notes.find(i => i.id === editingItem.id) // Находим заметку
-        item.title = modalTitle.value // Обновляем заголовок
-        item.tag = modalSelect.value // Обновляем тег
-        item.updateAt = new Date().toDateString()
-    }
-    saveToLocal()
-    render()
-    closeModal()
-}
-
-
-
-
-// Основная функция инициализации приложения
-function init(){
-    maxId = getMaxId() // Устанавливаем максимальный ID
-    renderMenu() // Рендерим меню тегов
-    render() // Рендерим список заметок
-    
-    // Обработчик клика по кнопке поиска
-    btnSearch.addEventListener('click', render)
-    
-    // Обработчик клика по кнопке создания заметки
-    btnNote.addEventListener('click',()=>{
-        editingItem = { // Создаем объект для новой заметки
-            id: null,
-            title: null,
-            tag: null,
-            updateAt: new Date().toDateString() // Текущая дата
-        }
-        openModal() // Открываем модальное окно
-    })
-    
-    // Обработчик клика по кнопке закрытия модального окна
-    btnModalClose.addEventListener('click', closeModal) // Закрываем модальное окно
-    
-    // Обработчик клика по кнопке сохранения в модальном окне
-    modalSaveBtn.addEventListener('click',(e)=>{
-        e.preventDefault() // Предотвращаем отправку формы
-        onSave() // Вызываем функцию сохранения
-    })
-}
-
-// Запуск приложения
-init()
