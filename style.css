@@ -78,6 +78,10 @@ body{
 }
 .search__btn{
     border-radius: 10px;
+    background-image: url('search.png');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
     cursor: pointer;
     width: 37px;
     height: 37px;
