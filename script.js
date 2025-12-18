@@ -18,19 +18,19 @@ document.addEventListener('DOMContentLoaded', function() {
     // Текущая редактируемая заметка
     let currentNoteId = null;
 
-    // Базовые теги (всегда отображаются, даже если заметок нет)
+    // Базовые теги 
     const BASE_TAGS = ['Идеи', 'Личное', 'Работа', 'Список покупок'];
 
     // Показать модальное окно
     function showModal(note = null) {
         overlay.style.display = 'flex';
-        if (note) {
-            modalInput.value = note.title;
-            modalSelect.value = note.tag;
+        if (note) { //если редактируем заметку
+            modalInput.value = note.title; //заполняем заголовок
+            modalSelect.value = note.tag; //заполняем теги
             currentNoteId = note.id;
             modalDelete.style.display = 'block';
-        } else {
-            modalForm.reset();
+        } else { //если создаём новую заметку
+            modalForm.reset(); 
             currentNoteId = null;
             modalDelete.style.display = 'none';
         }
@@ -48,19 +48,19 @@ document.addEventListener('DOMContentLoaded', function() {
     // Создать заметку
     function createNote(title, tag) {
         const note = {
-            id: Date.now() + Math.random().toString(36).substr(2, 9),
+            id: Date.now() + Math.random().toString(36).substr(2, 9), //генерируем id
             title: title,
             tag: tag,
             date: new Date().toLocaleDateString('ru-RU')
         };
-        notes.push(note);
-        renderNotes();
-        renderTags();
+        notes.push(note); //добавляем в массив
+        renderNotes(); //обновляем список
+        renderTags(); //обновляем категории
     }
 
     // Обновить заметку
     function updateNote(id, title, tag) {
-        const note = notes.find(n => n.id === id);
+        const note = notes.find(n => n.id === id); //находим заметку по id
         if (note) {
             note.title = title;
             note.tag = tag;
@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Удалить заметку
     function deleteNote(id) {
-        notes = notes.filter(n => n.id !== id);
+        notes = notes.filter(n => n.id !== id); //удаляем заметку из массива
         renderNotes();
         renderTags();
         hideModal();
@@ -80,12 +80,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Рендеринг заметок
     function renderNotes(filter = '') {
         list.innerHTML = '';
+        //фильтруем заметки по поиску
         const filteredNotes = notes.filter(note => {
             const searchText = filter.toLowerCase();
             return note.title.toLowerCase().includes(searchText) ||
                    note.tag.toLowerCase().includes(searchText);
         });
-
+        
+        //создаём HTML для каждой заметки
         filteredNotes.forEach(note => {
             const noteElement = document.createElement('div');
             noteElement.className = 'list__report';
@@ -150,33 +152,30 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Обработчики событий
-    menuButton.addEventListener('click', () => showModal());
-    modalClose.addEventListener('click', hideModal);
+    menuButton.addEventListener('click', () => showModal());//открываем модальное окно
+    modalClose.addEventListener('click', hideModal);//закрываем модальное окно
 
     modalForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        const title = modalInput.value.trim();
-        const tag = modalSelect.value;
+        const title = modalInput.value.trim();//получаем заголовок
+        const tag = modalSelect.value;//получаем категорию
 
-        if (!title) return;
+        if (!title) return;//если заголовок пустой, выходим
 
         if (currentNoteId) {
-            updateNote(currentNoteId, title, tag);
+            updateNote(currentNoteId, title, tag);//обновляем заметку
         } else {
-            createNote(title, tag);
+            createNote(title, tag);//создаёт новую
         }
         hideModal();
     });
 
-    modalDelete.addEventListener('click', () => deleteNote(currentNoteId));
+    modalDelete.addEventListener('click', () => deleteNote(currentNoteId));//обработка удаления
 
-    // Поиск только по кнопке «Найти»
+    // Поиск по кнопке «Найти»
     searchBtn.addEventListener('click', () => {
-        renderNotes(searchInput.value); // Запускаем рендеринг с фильтром из поля поиска
+        renderNotes(searchInput.value); // фильтруем по введенному поиску
     });
-
-    // УДАЛЕНО: поиск при вводе текста
-    // searchInput.addEventListener('input', () => renderNotes(searchInput.value));
 
     // Инициализация
     renderNotes();
